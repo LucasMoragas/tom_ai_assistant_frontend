@@ -13,23 +13,36 @@
   </div>
 </template>
   
-  <script setup>
-  import { ref } from 'vue'
-  import TopBar from '../components/TopBar.vue'
-  import AssistantInput from '../components/AssistantInput.vue'
-  import MessageCard from '../components/MessageCard.vue'
-  
-  // Lista de mensagens mockadas
-const messages = ref([
-  {
-    question: 'Qual o melhor horário para irrigar os tomates?',
-    answer:
-      'O ideal é irrigar os tomates no início da manhã ou no final da tarde para evitar a evaporação excessiva e o surgimento de doenças.',
-  },
-]);
+<script setup>
+import { ref } from 'vue'
+import TopBar from '../components/TopBar.vue'
+import AssistantInput from '../components/AssistantInput.vue'
+import MessageCard from '../components/MessageCard.vue'
+import { chatService } from '../services/chatService'
 
-function onAsk(text) {
-  messages.value.push({ question: text, answer: 'Resposta padrão do Tom.' });
+const messages = ref([]);
+const loading = ref(false);
+
+async function onAsk(text) {
+  try {
+    loading.value = true;
+    // Adiciona a pergunta imediatamente
+    messages.value.unshift({ 
+      question: text, 
+      answer: 'Processando...' 
+    });
+
+    // Envia para o backend
+    const response = await chatService.sendMessage(text);
+    
+    // Atualiza a resposta
+    messages.value[0].answer = response.message;
+  } catch (error) {
+    console.error('Error:', error);
+    messages.value[0].answer = 'Desculpe, ocorreu um erro ao processar sua pergunta.';
+  } finally {
+    loading.value = false;
+  }
 }
 </script>
 

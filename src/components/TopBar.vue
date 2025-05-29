@@ -2,21 +2,54 @@
   <div class="topbar">
     <div class="item">
       <span class="icon">🌡️</span>
-      <span class="value">21°C</span>
+      <span class="value">{{ temperature }}°C</span>
     </div>
     <div class="item">
       <span class="icon">💧</span>
-      <span class="value">85%</span>
+      <span class="value">{{ humidity }}%</span>
     </div>
     <div class="item">
       <span class="icon">🌱</span>
-      <span class="value">40%</span>
+      <span class="value">{{ soilHumidity }}%</span>
     </div>
   </div>
 </template>
 
 <script setup>
-// Dados mockados fixos; mais tarde podem vir via props
+import { ref, onMounted, onUnmounted } from 'vue';
+import { weatherService } from '../services/weatherService';
+
+const temperature = ref('--');
+const humidity = ref('--');
+const soilHumidity = ref('--');
+let updateInterval;
+
+async function updateWeatherData() {
+  try {
+    const data = await weatherService.getWeatherData();
+    temperature.value = Math.round(data.current_weather.temperature);
+    humidity.value = Math.round(data.current_weather.humidity);
+    // Simulando umidade do solo baseado na umidade do ar e precipitação
+    soilHumidity.value = Math.round(
+      (data.current_weather.humidity + data.current_weather.precipitation * 10) / 2
+    );
+  } catch (error) {
+    console.error('Error updating weather data:', error);
+  }
+}
+
+onMounted(() => {
+  // Atualiza imediatamente
+  updateWeatherData();
+  // Atualiza a cada 5 minutos
+  updateInterval = setInterval(updateWeatherData, 5 * 60 * 1000);
+});
+
+onUnmounted(() => {
+  if (updateInterval) {
+    clearInterval(updateInterval);
+  }
+});
 </script>
 
 <style scoped>
